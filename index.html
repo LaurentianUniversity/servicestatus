@@ -1,1 +1,17 @@
-<h1>Hello, world</h1>
+<script>
+        function loadData() {
+          var url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRb31Zy_-PmNx3p1vy_VwXIp0zqxe0Zw59JIjies72rlHn3TqDOLL8ZIF4LyjtTU3Yvju4OYg7aKAsn/pub?output=csv";
+          xmlhttp = new XMLHttpRequest();
+          xmlhttp.onreadystatechange = function () {
+              if (xmlhttp.readyState == 4) {
+                  document.getElementById("display").innerHTML = xmlhttp.responseText;
+                  //alert(xmlhttp.responseText);
+                  console.log(xmlhttp.responseText);
+              }
+          };
+          xmlhttp.open("GET", url, true);
+          xmlhttp.send(null);
+      }
+      loadData();
+</script>
+<div id="display"></div>
