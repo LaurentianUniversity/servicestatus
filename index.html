@@ -1,6 +1,15 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+  
+    <meta name="generator" content="Hugo 0.104.2">
+    <title>Laurentian Services Status</title>
+<script src="https://kit.fontawesome.com/fbe1b382bf.js" crossorigin="anonymous"></script>
 <script src="scripts/parseparse.js"></script>
 <script src="scripts/handlebars.js"></script>
-<script src="scripts/ifCond.js"></script>
+<script src="scripts/ifCond.js?v=4"></script>
 <script src="scripts/moment.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
 <script
@@ -9,7 +18,7 @@
   crossorigin="anonymous"></script>
 
 <script id="server-template" type="text/x-handlebars-template">
-  {{#each this}}
+  {{#each this.sections}}
   <div class="accordion-item">
     <h2 class="accordion-header" id="heading-{{@index}}">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{@index}}" aria-expanded="false" aria-controls="collapseTwo">
@@ -17,17 +26,26 @@
         <div class="container">
           <div class="row">
             <div class="col">
-              {{@key}}
+             
+              {{#ifIn @key ../categories }}
+              <span class="langstring" data-lang="en">{{getObj @key ../categories "English"}}</span><span class="langstring" data-lang="fr">{{getObj @key ../categories "French"}}</span>
+              {{else}}
+                {{@key}}
+              {{/ifIn}}
             </div>
             <div class="col" style="text-align: right;">
               {{#ifcond this.total '==' this.ok}}
-                <span class="badge bg-success">Operational</span>
+                <span class="badge bg-success langstring" data-lang="en">{{getObj "operational" ../statuses "English"}}</span>
+                <span class="badge bg-success langstring" data-lang="fr">{{getObj "operational" ../statuses "French"}}</span>
               {{else}}
                 {{#if this.disruption}}
-                <span class="badge bg-danger">Disruption</span>
+                <span class="badge bg-danger langstring" data-lang="en">{{getObj "disruption" ../statuses "English"}}</span>
+                <span class="badge bg-danger langstring" data-lang="fr">{{getObj "disruption" ../statuses "French"}}</span>
            
                 {{else}}
-                <span class="badge bg-warning">Maintenance</span>
+           
+                <span class="badge bg-warning langstring" data-lang="en">{{getObj "maintenance" ../statuses "English"}}</span>
+                <span class="badge bg-warning langstring" data-lang="fr">{{getObj "maintenance" ../statuses "French"}}</span>
                 
                 {{/if}}
               {{/ifcond}}
@@ -41,9 +59,9 @@
         <table class="table table-hover">
           <thead>
             <tr>
-              <th>Service</th>
-              <th>Status</th>
-              <th>Last Update</th>
+              <th><span class="langstring" data-lang="en">Service</span><span class="langstring" data-lang="fr">Service</span></th>
+              <th><span class="langstring" data-lang="en">Status</span><span class="langstring" data-lang="fr">Statut</span></th>
+              <th><span class="langstring" data-lang="en">Last Update</span><span class="langstring" data-lang="fr">Dernière mis à jour</span></th>
             </tr>
           </thead>
           <tbody>
@@ -51,16 +69,19 @@
         
            
           <tr>
-            <td>{{this.Service}}</td>
+            <td><span class="langstring" data-lang="en">{{this.ServiceEN}}</span><span class="langstring"  data-lang="fr">{{this.ServiceEN}}</span></td>
             <td>
               
               {{#ifcond this.Status '==' "Operational"}}
-              <span class="badge bg-success">Operational</span>
+                <span class="badge bg-success langstring" data-lang="en">{{getObj "operational" ../../statuses "English"}}</span>
+                <span class="badge bg-success langstring" data-lang="fr">{{getObj "operational" ../../statuses "French"}}</span>
               {{else}}
                 {{#ifcond this.Status '==' "Maintenance"}}
-                  <span class="badge bg-warning">Maintenance</span>
+                  <span class="badge bg-warning langstring" data-lang="en">{{getObj "maintenance" ../../statuses "English"}}</span>
+                  <span class="badge bg-warning langstring" data-lang="fr">{{getObj "maintenance" ../../statuses "French"}}</span>
                 {{else}}
-                  <span class="badge bg-danger">Disruption</span>
+                  <span class="badge bg-danger langstring" data-lang="en">{{getObj "disruption" ../../statuses "English"}}</span>
+                  <span class="badge bg-danger langstring" data-lang="fr">{{getObj "disruption" ../../statuses "French"}}</span>
               {{/ifcond}}
             {{/ifcond}}
             
@@ -78,21 +99,44 @@
   </div>
   {{/each}}
 </script>
+</head>
 
 
+<style>
+  html[lang="en"] .langstring[data-lang="fr"]{display: none;}
+  html[lang="fr"] .langstring[data-lang="en"]{display: none;}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
 <script>
-        function loadData() {
+        // start by getting the categories that we need for the data
+      
+        http = new XMLHttpRequest();
+        http.onreadystatechange = function () {
+        
+              if (http.readyState == 4) {
+                var categories = $.parseJSON(http.responseText);
+                loadData(categories);
+              }
+              
+        }
+        http.open("GET", "https://laurentian-status-default-rtdb.firebaseio.com/servicecategories.json", true);
+        http.setRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
+        http.setRequestHeader('Cache-Control', 'no-cache');
+        http.setRequestHeader("Pragma", "no-cache"); 
+ 
+        http.send(null);
+
+
+        function loadData(categories) {
           var url = "https://laurentian-status-default-rtdb.firebaseio.com/luservices.json";
           xmlhttp = new XMLHttpRequest();
  
           xmlhttp.onreadystatechange = function () {
               if (xmlhttp.readyState == 4) {
                 var data = $.parseJSON(xmlhttp.responseText);
-                data.shift(); // first index is empty
+          
                 var items = {};
-                console.log(data);
-                console.log(data.length);
+
                 jQuery.each(data,function(index,service){
                     var cat = service['Category'];
                     if(cat != "")
@@ -135,7 +179,7 @@
 
                 var source = document.getElementById("server-template").innerHTML;
                 var template = Handlebars.compile(source);
-                var html = template(items);
+                var html = template({sections: items, categories: categories, statuses : {"operational" : {"English" : "Operational", "French" : "Opérationnel"}, "maintenance" : {"English" : "Maintenance", "French" : "Entretien"}, "disruption" : {"English" : "Disruption", "French" : "Perturbation"}}});
                 $('#services').html(html);
 
               }
@@ -147,23 +191,16 @@
  
           xmlhttp.send(null);
       }
-      loadData();
+      
+      jQuery(document).ready(function($){
+        $(".langchange").click(function(e){
+          e.preventDefault();
+          var newlang = $('html').attr("lang") == "en" ? "fr" : "en";
+          $('html').attr("lang",newlang);
+        });
+      });
 
 </script>
-
-<html lang="en"><head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="">
-
-  <meta name="generator" content="Hugo 0.104.2">
-  <title>Starter Template · Bootstrap v5.2</title>
-
-  <link rel="canonical" href="https://getbootstrap.com/docs/5.2/examples/starter-template/">
-
-  
-
-  
 
   <!-- Favicons -->
 
@@ -231,15 +268,26 @@
 <body cz-shortcut-listen="true" data-new-gr-c-s-check-loaded="14.1091.0" data-gr-ext-installed="">
   
 <div class="col-lg-8 mx-auto p-4 py-md-5">
-<header class="d-flex align-items-center pb-3 mb-5 border-bottom">
+<header class=" pb-3 mb-5 border-bottom">
+  <div class="row">
+    <div class="col">
+      <img src="laurentian.svg" style="width: 250px;" class="langstring" data-lang="en" alt="Laurentian Logo"/>
+      <img src="laurentienne.svg" style="width: 250px;" class="langstring" data-lang="fr" alt="Laurentian Logo"/>
+
+    </div>
+    <div class="col" style="text-align: right;">
  
-    <img src="laurentian.svg" style="width: 250px;">
+      <a href="#" class="langchange langstring" data-lang="en"><i class="fa-solid fa-globe"></i> Français</a>
+      <a href="#" class="langchange langstring" data-lang="fr"><i class="fa-solid fa-globe"></i> English</a>
+    </div>
+  </div>
   
 </header>
 
 <main>
-  <h1>Laurentian Service Status</h1>
-  <p class="fs-5 col-md-12">View the status of various services at Laurentian.<br />To report an outage, please contact the Service Desk at 705.675.1151 ext. 2200</p>
+  <h1><span class="langstring" data-lang="en">Laurentian Services Status</span><span class="langstring" data-lang="fr">Statut des services de la Laurentienne</span></h1>
+  <p class="fs-5 col-md-12 langstring" data-lang="en">View the status of various services at Laurentian.<br />To report an outage, please contact the Service Desk at 705.675.1151 extension 2200</p>
+  <p class="fs-5 col-md-12 langstring" data-lang="fr">Consultez l'état des différents services à la Laurentienne.<br />Pour signaler une panne, veuillez contacter le Centre de services au 705.675.1151 poste 2200</p>
 
   <div class="accordion" id="services">
    
