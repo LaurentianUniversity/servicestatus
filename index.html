@@ -1,17 +1,259 @@
+<script src="scripts/parseparse.js"></script>
+<script src="scripts/handlebars.js"></script>
+<script src="scripts/ifCond.js"></script>
+<script src="scripts/moment.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+<script
+  src="https://code.jquery.com/jquery-1.12.4.js"
+  integrity="sha256-Qw82+bXyGq6MydymqBxNPYTaUXXq7c8v3CwiYwLLNXU="
+  crossorigin="anonymous"></script>
+
+<script id="server-template" type="text/x-handlebars-template">
+  {{#each this}}
+  <div class="accordion-item">
+    <h2 class="accordion-header" id="heading-{{@index}}">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{@index}}" aria-expanded="false" aria-controls="collapseTwo">
+      
+        <div class="container">
+          <div class="row">
+            <div class="col">
+              {{@key}}
+            </div>
+            <div class="col" style="text-align: right;">
+              {{#ifcond this.total '==' this.ok}}
+                <span class="badge bg-success">Operational</span>
+              {{else}}
+                {{#if this.disruption}}
+                <span class="badge bg-danger">Disruption</span>
+           
+                {{else}}
+                <span class="badge bg-warning">Maintenance</span>
+                
+                {{/if}}
+              {{/ifcond}}
+            </div>
+          </div>
+
+      </button>
+    </h2>
+    <div id="collapse-{{@index}}" class="accordion-collapse collapse" aria-labelledby="heading-{{@index}}" data-bs-parent="#accordionExample">
+      <div class="accordion-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Status</th>
+              <th>Last Update</th>
+            </tr>
+          </thead>
+          <tbody>
+        {{#each this.items}}
+        
+           
+          <tr>
+            <td>{{this.Service}}</td>
+            <td>
+              
+              {{#ifcond this.Status '==' "Operational"}}
+              <span class="badge bg-success">Operational</span>
+              {{else}}
+                {{#ifcond this.Status '==' "Maintenance"}}
+                  <span class="badge bg-warning">Maintenance</span>
+                {{else}}
+                  <span class="badge bg-danger">Disruption</span>
+              {{/ifcond}}
+            {{/ifcond}}
+            
+            
+            </td>
+            <td>{{this.Updated}}</td>
+          </tr>
+            
+            
+        {{/each}}
+      </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  {{/each}}
+</script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
 <script>
         function loadData() {
-          var url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRb31Zy_-PmNx3p1vy_VwXIp0zqxe0Zw59JIjies72rlHn3TqDOLL8ZIF4LyjtTU3Yvju4OYg7aKAsn/pub?output=csv";
+          var url = "https://laurentian-status-default-rtdb.firebaseio.com/luservices.json";
           xmlhttp = new XMLHttpRequest();
+ 
           xmlhttp.onreadystatechange = function () {
               if (xmlhttp.readyState == 4) {
-                  document.getElementById("display").innerHTML = xmlhttp.responseText;
-                  //alert(xmlhttp.responseText);
-                  console.log(xmlhttp.responseText);
+                var data = $.parseJSON(xmlhttp.responseText);
+                data.shift(); // first index is empty
+                var items = {};
+                console.log(data);
+                console.log(data.length);
+                jQuery.each(data,function(index,service){
+                    var cat = service['Category'];
+                    if(cat != "")
+                    {
+                      if(service['Updated'] !="")
+                      {
+                        var date = moment(service['Updated']);
+                        service['Updated'] = date.format("MMMM Do YYYY")+" at "+ date.format("h:mm:ssa"); 
+                      }
+                      
+                      if(items[cat] == undefined)
+                      {
+                        items[cat] = {"ok" : 0,"total" : 0,"maintenance" : false, "disruption" : false, "items" : []};
+                      }
+              
+
+                      if(service["Status"] == "Operational")
+                      {
+                        items[cat]["ok"]++;
+                      }
+                      else if(service["Status"] == "Maintenance")
+                      {
+                        items[cat]["maintenance"] = true;
+                      }
+                      else
+                      {
+                        items[cat]["disruption"] = true;
+                      }
+                      items[cat]["total"]++;
+                  
+                      items[cat]["items"].push(service);
+                    }
+                    items = Object.keys(items)
+                    .sort()
+                    .reduce(function (acc, key) { 
+                        acc[key] = items[key];
+                        return acc;
+                    }, {});
+                });
+
+                var source = document.getElementById("server-template").innerHTML;
+                var template = Handlebars.compile(source);
+                var html = template(items);
+                $('#services').html(html);
+
               }
           };
           xmlhttp.open("GET", url, true);
+          xmlhttp.setRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
+          xmlhttp.setRequestHeader('Cache-Control', 'no-cache');
+          xmlhttp.setRequestHeader("Pragma", "no-cache"); 
+ 
           xmlhttp.send(null);
       }
       loadData();
+
 </script>
-<div id="display"></div>
+
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="">
+
+  <meta name="generator" content="Hugo 0.104.2">
+  <title>Starter Template · Bootstrap v5.2</title>
+
+  <link rel="canonical" href="https://getbootstrap.com/docs/5.2/examples/starter-template/">
+
+  
+
+  
+
+  <!-- Favicons -->
+
+
+<meta name="theme-color" content="#712cf9">
+
+
+  <style>
+    .bd-placeholder-img {
+      font-size: 1.125rem;
+      text-anchor: middle;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      user-select: none;
+    }
+
+    @media (min-width: 768px) {
+      .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+      }
+    }
+
+    .b-example-divider {
+      height: 3rem;
+      background-color: rgba(0, 0, 0, .1);
+      border: solid rgba(0, 0, 0, .15);
+      border-width: 1px 0;
+      box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+    }
+
+    .b-example-vr {
+      flex-shrink: 0;
+      width: 1.5rem;
+      height: 100vh;
+    }
+
+    .bi {
+      vertical-align: -.125em;
+      fill: currentColor;
+    }
+
+    .nav-scroller {
+      position: relative;
+      z-index: 2;
+      height: 2.75rem;
+      overflow-y: hidden;
+    }
+
+    .nav-scroller .nav {
+      display: flex;
+      flex-wrap: nowrap;
+      padding-bottom: 1rem;
+      margin-top: -1px;
+      overflow-x: auto;
+      text-align: center;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
+  </style>
+
+  
+  <!-- Custom styles for this template -->
+
+
+<body cz-shortcut-listen="true" data-new-gr-c-s-check-loaded="14.1091.0" data-gr-ext-installed="">
+  
+<div class="col-lg-8 mx-auto p-4 py-md-5">
+<header class="d-flex align-items-center pb-3 mb-5 border-bottom">
+ 
+    <img src="laurentian.svg" style="width: 250px;">
+  
+</header>
+
+<main>
+  <h1>Laurentian Service Status</h1>
+  <p class="fs-5 col-md-12">View the status of various services at Laurentian.<br />To report an outage, please contact the Service Desk at 705.675.1151 ext. 2200</p>
+
+  <div class="accordion" id="services">
+   
+  
+
+  </div>
+
+</main>
+<footer class="pt-5 my-5 text-muted border-top">
+
+</footer>
+</div>
+
+
+
+</body>
+</html>
