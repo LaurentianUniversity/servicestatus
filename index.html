@@ -120,7 +120,10 @@
 			
 			if(msg.payloadString=="bad"){
 			
-				
+				setInterval(function(){ 
+    						setTimeout(function(){  document.body.style.animation = "redflash 0.66s 2 alternate ease-out" }, 100);
+  						document.body.style.animation = "";    
+				}, 1000);
 				
 			}else{
 			
@@ -131,8 +134,8 @@
 
 		}
 	    
-	    function flashGreen() {
-			setTimeout(function(){  document.body.style.animation = "greenflash 0.66s 2 alternate ease-out" }, 100);
+	    function flashRed() {
+			setTimeout(function(){  document.body.style.animation = "redflash 0.66s 2 alternate ease-out" }, 100);
   			document.body.style.animation = "";
 		}
 		
@@ -395,6 +398,11 @@
       white-space: nowrap;
       -webkit-overflow-scrolling: touch;
     }
+	  @keyframes redflash {
+  to {
+    background-color: #FFCDD2;
+  }
+}
   </style>
 
   
