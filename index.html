@@ -117,10 +117,23 @@
 			setTimeout(MQTTconnect, reconnectTimeout);
         }
 		function onMessageArrived(msg){
+			
+			if(msg.payloadString=="bad"){
+			
+				
+				
+			}else{
+			
+			}
 			out_msg="Message received "+msg.payloadString+"<br>";
 			out_msg=out_msg+"Message received Topic "+msg.destinationName;
 			console.log(out_msg);
 
+		}
+	    
+	    function flashGreen() {
+			setTimeout(function(){  document.body.style.animation = "greenflash 0.66s 2 alternate ease-out" }, 100);
+  			document.body.style.animation = "";
 		}
 		
 	 	function onConnect() {
