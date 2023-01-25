@@ -261,6 +261,7 @@
       }
       
       jQuery(document).ready(function($){
+        $("h1:first").html("Laurentian Services Status.");
         $(".langchange").click(function(e){
           e.preventDefault();
           var newlang = $('html').attr("lang") == "en" ? "fr" : "en";
